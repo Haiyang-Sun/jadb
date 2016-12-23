@@ -1,68 +1,10 @@
-# Used to store github access token for releasing
-/access_token
-
-################
-#   IntelliJ   #
-################
-/.idea/workspace.xml
-/.idea/tasks.xml
-
-
-#############
-#   Maven   #
-#############
-.idea/workspace.xml
-.idea/libraries
-out/
-target/
-
-
-#################
-## Eclipse
-#################
-
-*.pydevproject
-#.project
-.metadata
-bin/
-tmp/
-*.tmp
-*.bak
-*.swp
-*~.nib
-local.properties
-#.classpath
-.settings/
-.loadpath
-
-# External tool builders
-.externalToolBuilders/
-
-# Locally stored "Eclipse launch configurations"
-*.launch
-
-# CDT-specific
-.cproject
-
-# PDT-specific
-.buildpath
-
-
-#####################
-## Windows detritus #
-#####################
-
-# Windows image file caches
-Thumbs.db
-ehthumbs.db
-
-# Folder config file
-Desktop.ini
-
-# Recycle Bin used on file shares
-$RECYCLE.BIN/
-
-#################
-## Mac detritus #
-#################
-.DS_Store
+bin
+target
+*.iml
+*.ipr
+*.iws
+*.iml
+.idea
+*.log
+*.gz
+*.project
