@@ -24,7 +24,7 @@ public class DeviceWatcher implements Runnable {
                 listener.onDetect(connection.parseDevices(transport.readString()));
             }
         } catch (IOException ioe) {
-            synchronized(this) {
+            synchronized (this) {
                 if (transport != null) {
                     listener.onException(ioe);
                 }
@@ -35,7 +35,7 @@ public class DeviceWatcher implements Runnable {
     }
 
     public void stop() throws IOException {
-        synchronized(this) {
+        synchronized (this) {
             transport.close();
             transport = null;
         }

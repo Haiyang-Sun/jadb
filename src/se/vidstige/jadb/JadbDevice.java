@@ -12,7 +12,9 @@ public class JadbDevice {
         Offline,
         Device,
         BootLoader
-    };
+    }
+
+    ;
 
     private final String serial;
     private final ITransportFactory transportFactory;
@@ -33,10 +35,14 @@ public class JadbDevice {
 
     private State convertState(String type) {
         switch (type) {
-            case "device":     return State.Device;
-            case "offline":    return State.Offline;
-            case "bootloader": return State.BootLoader;
-            default:           return State.Unknown;
+            case "device":
+                return State.Device;
+            case "offline":
+                return State.Offline;
+            case "bootloader":
+                return State.BootLoader;
+            default:
+                return State.Unknown;
         }
     }
 
@@ -71,10 +77,11 @@ public class JadbDevice {
         return state;
     }
 
-    /** Execute a shell command.
+    /**
+     * Execute a shell command.
      *
      * @param command main command to run. E.g. "ls"
-     * @param args arguments to the command.
+     * @param args    arguments to the command.
      * @return combined stdout/stderr stream.
      * @throws IOException
      * @throws JadbException
@@ -91,7 +98,6 @@ public class JadbDevice {
     }
 
     /**
-     *
      * @deprecated Use InputStream executeShell(String command, String... args) method instead. Together with
      * Stream.copy(in, out), it is possible to achieve the same effect.
      */
@@ -105,12 +111,12 @@ public class JadbDevice {
         }
         send(transport, "shell:" + shellLine.toString());
         if (output != null) {
-        	AdbFilterOutputStream out = new AdbFilterOutputStream(output);
-        	try {
-        		transport.readResponseTo(out);
-        	} finally {
-        		out.close();
-        	}
+            AdbFilterOutputStream out = new AdbFilterOutputStream(output);
+            try {
+                transport.readResponseTo(out);
+            } finally {
+                out.close();
+            }
         }
     }
 

@@ -65,4 +65,36 @@ public class JadbConnection implements ITransportFactory {
     public JadbDevice getAnyDevice() {
         return JadbDevice.createAny(this);
     }
+
+    /**
+     * forward socket connections
+     * <p>
+     * forward specs are one of: <br>
+     * tcp:[port] <br>
+     * localabstract:[unix domain socket name] <br>
+     * localreserved:[unix domain socket name] <br>
+     * localfilesystem:[unix domain socket name] <br>
+     * dev:[character device name] <br>
+     * jdwp:[process pid] (remote only)
+     *
+     * @param local  address
+     * @param remote address
+     * @see <a href='https://developer.android.com/studio/command-line/adb.html#forwardports'>developer.android.com</a>
+     */
+    public void setForwarding(String local, String remote) throws IOException, JadbException {
+        try (Transport transport = createTransport()) {
+            transport.send("host:forward:" + local + ";" + remote);
+            transport.verifyResponse();
+        }
+    }
+
+    /**
+     * Removes all socket forwardings
+     */
+    public void removeForwardings() throws IOException, JadbException {
+        try (Transport transport = createTransport()) {
+            transport.send("host:killforward-all");
+            transport.verifyResponse();
+        }
+    }
 }

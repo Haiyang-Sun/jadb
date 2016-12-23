@@ -4,7 +4,7 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.Charset;
 
-public class Transport {
+public class Transport implements AutoCloseable {
 
     private final OutputStream outputStream;
     private final InputStream inputStream;
@@ -64,6 +64,7 @@ public class Transport {
         return new SyncTransport(outputStream, inputStream);
     }
 
+    @Override
     public void close() throws IOException {
         inputStream.close();
         outputStream.close();

@@ -9,8 +9,7 @@ public class LookBackFilteringOutputStream extends FilterOutputStream {
     private final ArrayDeque<Byte> buffer;
     private final int lookBackBufferSize;
 
-    protected LookBackFilteringOutputStream(OutputStream inner, int lookBackBufferSize)
-    {
+    protected LookBackFilteringOutputStream(OutputStream inner, int lookBackBufferSize) {
         super(inner);
         this.lookBackBufferSize = lookBackBufferSize;
         this.buffer = new ArrayDeque<Byte>(lookBackBufferSize);
