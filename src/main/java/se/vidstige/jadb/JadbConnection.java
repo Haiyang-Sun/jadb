@@ -26,21 +26,19 @@ public class JadbConnection implements ITransportFactory {
     }
 
     public String getHostVersion() throws IOException, JadbException {
-        Transport main = createTransport();
-        main.send("host:version");
-        main.verifyResponse();
-        String version = main.readString();
-        main.close();
-        return version;
+        try (Transport main = createTransport()) {
+            main.send("host:version");
+            main.verifyResponse();
+            return main.readString();
+        }
     }
 
     public List<JadbDevice> getDevices() throws IOException, JadbException {
-        Transport devices = createTransport();
-        devices.send("host:devices");
-        devices.verifyResponse();
-        String body = devices.readString();
-        devices.close();
-        return parseDevices(body);
+        try (Transport devices = createTransport()) {
+            devices.send("host:devices");
+            devices.verifyResponse();
+            return parseDevices(devices.readString());
+        }
     }
 
     public DeviceWatcher createDeviceWatcher(DeviceDetectionListener listener) throws IOException, JadbException {
@@ -56,14 +54,10 @@ public class JadbConnection implements ITransportFactory {
         for (String line : lines) {
             String[] parts = line.split("\t");
             if (parts.length > 1) {
-                devices.add(new JadbDevice(parts[0], parts[1], this));
+                devices.add(new JadbDevice(this, parts[0]));
             }
         }
         return devices;
-    }
-
-    public JadbDevice getAnyDevice() {
-        return JadbDevice.createAny(this);
     }
 
     /**

@@ -1,61 +1,21 @@
 package se.vidstige.jadb;
 
-import se.vidstige.jadb.managers.Bash;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class JadbDevice {
-    public enum State {
-        Unknown,
-        Offline,
-        Device,
-        BootLoader
+
+    private final ITransportFactory transportFactory;
+    private final String serial;
+
+    public JadbDevice(ITransportFactory tFactory) {
+        this(tFactory, null);
     }
 
-    ;
-
-    private final String serial;
-    private final ITransportFactory transportFactory;
-
-    JadbDevice(String serial, String type, ITransportFactory tFactory) {
+    public JadbDevice(ITransportFactory tFactory, String serial) {
         this.serial = serial;
         this.transportFactory = tFactory;
-    }
-
-    static JadbDevice createAny(JadbConnection connection) {
-        return new JadbDevice(connection);
-    }
-
-    private JadbDevice(ITransportFactory tFactory) {
-        serial = null;
-        this.transportFactory = tFactory;
-    }
-
-    private State convertState(String type) {
-        switch (type) {
-            case "device":
-                return State.Device;
-            case "offline":
-                return State.Offline;
-            case "bootloader":
-                return State.BootLoader;
-            default:
-                return State.Unknown;
-        }
-    }
-
-    private Transport getTransport() throws IOException, JadbException {
-        Transport transport = transportFactory.createTransport();
-        if (serial == null) {
-            transport.send("host:transport-any");
-            transport.verifyResponse();
-        } else {
-            transport.send("host:transport:" + serial);
-            transport.verifyResponse();
-        }
-        return transport;
     }
 
     public String getSerial() {
@@ -63,18 +23,11 @@ public class JadbDevice {
     }
 
     public State getState() throws IOException, JadbException {
-        Transport transport = transportFactory.createTransport();
-        if (serial == null) {
-            transport.send("host:get-state");
+        try (Transport transport = transportFactory.createTransport()) {
+            transport.send(serial == null ? "host:get-state" : "host-serial:" + serial + ":get-state");
             transport.verifyResponse();
-        } else {
-            transport.send("host-serial:" + serial + ":get-state");
-            transport.verifyResponse();
+            return State.fromString(transport.readString());
         }
-
-        State state = convertState(transport.readString());
-        transport.close();
-        return state;
     }
 
     /**
@@ -97,29 +50,6 @@ public class JadbDevice {
         return new AdbFilterInputStream(new BufferedInputStream(transport.getInputStream()));
     }
 
-    /**
-     * @deprecated Use InputStream executeShell(String command, String... args) method instead. Together with
-     * Stream.copy(in, out), it is possible to achieve the same effect.
-     */
-    @Deprecated
-    public void executeShell(OutputStream output, String command, String... args) throws IOException, JadbException {
-        Transport transport = getTransport();
-        StringBuilder shellLine = new StringBuilder(command);
-        for (String arg : args) {
-            shellLine.append(" ");
-            shellLine.append(Bash.quote(arg));
-        }
-        send(transport, "shell:" + shellLine.toString());
-        if (output != null) {
-            AdbFilterOutputStream out = new AdbFilterOutputStream(output);
-            try {
-                transport.readResponseTo(out);
-            } finally {
-                out.close();
-            }
-        }
-    }
-
     public List<RemoteFile> list(String remotePath) throws IOException, JadbException {
         Transport transport = getTransport();
         SyncTransport sync = transport.startSync();
@@ -130,11 +60,6 @@ public class JadbDevice {
             result.add(dent);
         }
         return result;
-    }
-
-    private int getMode(File file) {
-        //noinspection OctalInteger
-        return 0664;
     }
 
     public void push(InputStream source, long lastModified, int mode, RemoteFile remote) throws IOException, JadbException {
@@ -149,28 +74,39 @@ public class JadbDevice {
     }
 
     public void push(File local, RemoteFile remote) throws IOException, JadbException {
-        FileInputStream fileStream = new FileInputStream(local);
-        push(fileStream, local.lastModified(), getMode(local), remote);
-        fileStream.close();
+        try (FileInputStream fileStream = new FileInputStream(local)) {
+            push(fileStream, local.lastModified(), getMode(local), remote);
+        }
     }
 
     public void pull(RemoteFile remote, OutputStream destination) throws IOException, JadbException {
         Transport transport = getTransport();
         SyncTransport sync = transport.startSync();
         sync.send("RECV", remote.getPath());
-
         sync.readChunksTo(destination);
     }
 
     public void pull(RemoteFile remote, File local) throws IOException, JadbException {
-        FileOutputStream fileStream = new FileOutputStream(local);
-        pull(remote, fileStream);
-        fileStream.close();
+        try (FileOutputStream fileStream = new FileOutputStream(local)) {
+            pull(remote, fileStream);
+        }
     }
 
     private void send(Transport transport, String command) throws IOException, JadbException {
         transport.send(command);
         transport.verifyResponse();
+    }
+
+    private Transport getTransport() throws IOException, JadbException {
+        Transport transport = transportFactory.createTransport();
+        transport.send(serial == null ? "host:transport-any" : "host:transport:" + serial);
+        transport.verifyResponse();
+        return transport;
+    }
+
+    private int getMode(File file) {
+        //noinspection OctalInteger
+        return 0664;
     }
 
     @Override
@@ -179,27 +115,37 @@ public class JadbDevice {
     }
 
     @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((serial == null) ? 0 : serial.hashCode());
-        return result;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof JadbDevice)) return false;
+
+        JadbDevice that = (JadbDevice) o;
+
+        return serial != null ? serial.equals(that.serial) : that.serial == null;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        JadbDevice other = (JadbDevice) obj;
-        if (serial == null) {
-            if (other.serial != null)
-                return false;
-        } else if (!serial.equals(other.serial))
-            return false;
-        return true;
+    public int hashCode() {
+        return serial != null ? serial.hashCode() : 0;
+    }
+
+    public enum State {
+        UNKNOWN,
+        OFFLINE,
+        DEVICE,
+        BOOTLOADER;
+
+        public static State fromString(String state) {
+            switch (state) {
+                case "device":
+                    return State.DEVICE;
+                case "offline":
+                    return State.OFFLINE;
+                case "bootloader":
+                    return State.BOOTLOADER;
+                default:
+                    return State.UNKNOWN;
+            }
+        }
     }
 }

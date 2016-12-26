@@ -1,4 +1,4 @@
-package se.vidstige.jadb.managers;
+package se.vidstige.jadb;
 
 public class Bash {
     public static String quote(String s) {
