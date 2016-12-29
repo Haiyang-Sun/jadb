@@ -24,10 +24,6 @@ public class Transport implements AutoCloseable {
         return readString(length);
     }
 
-    public void readResponseTo(OutputStream output) throws IOException {
-        Stream.copy(inputStream, output);
-    }
-
     public InputStream getInputStream() {
         return inputStream;
     }
