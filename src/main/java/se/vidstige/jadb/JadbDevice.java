@@ -1,6 +1,7 @@
 package se.vidstige.jadb;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,9 +75,9 @@ public class JadbDevice {
     }
 
     public void push(File local, RemoteFile remote) throws IOException, JadbException {
-        try (FileInputStream fileStream = new FileInputStream(local)) {
-            push(fileStream, local.lastModified(), getMode(local), remote);
-        }
+        FileInputStream fileStream = new FileInputStream(local);
+        push(fileStream, local.lastModified(), getMode(local), remote);
+        fileStream.close();
     }
 
     public void pull(RemoteFile remote, OutputStream destination) throws IOException, JadbException {
@@ -87,9 +88,10 @@ public class JadbDevice {
     }
 
     public void pull(RemoteFile remote, File local) throws IOException, JadbException {
-        try (FileOutputStream fileStream = new FileOutputStream(local)) {
-            pull(remote, fileStream);
-        }
+        FileOutputStream fileStream = new FileOutputStream(local);
+        pull(remote, fileStream);
+        fileStream.flush();
+        fileStream.close();
     }
 
     private void send(Transport transport, String command) throws IOException, JadbException {
