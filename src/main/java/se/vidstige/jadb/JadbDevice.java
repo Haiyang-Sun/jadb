@@ -60,6 +60,7 @@ public class JadbDevice {
         for (RemoteFileRecord dent = sync.readDirectoryEntry(); dent != RemoteFileRecord.DONE; dent = sync.readDirectoryEntry()) {
             result.add(dent);
         }
+        transport.close();
         return result;
     }
 

@@ -34,11 +34,12 @@ public class JadbConnection implements ITransportFactory {
     }
 
     public List<JadbDevice> getDevices() throws IOException, JadbException {
-        try (Transport devices = createTransport()) {
+        Transport devices = createTransport();
             devices.send("host:devices");
             devices.verifyResponse();
-            return parseDevices(devices.readString());
-        }
+            List<JadbDevice> res = parseDevices(devices.readString());
+            devices.close();
+            return res;
     }
 
     public DeviceWatcher createDeviceWatcher(DeviceDetectionListener listener) throws IOException, JadbException {
