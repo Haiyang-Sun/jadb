@@ -27,7 +27,9 @@ public class JadbDevice {
         try (Transport transport = transportFactory.createTransport()) {
             transport.send(serial == null ? "host:get-state" : "host-serial:" + serial + ":get-state");
             transport.verifyResponse();
-            return State.fromString(transport.readString());
+            State res = State.fromString(transport.readString());
+            transport.close();
+            return res;
         }
     }
 
@@ -73,6 +75,7 @@ public class JadbDevice {
 
         sync.sendStatus("DONE", (int) lastModified);
         sync.verifyStatus();
+        transport.close();
     }
 
     public void push(File local, RemoteFile remote) throws IOException, JadbException {
@@ -86,6 +89,7 @@ public class JadbDevice {
         SyncTransport sync = transport.startSync();
         sync.send("RECV", remote.getPath());
         sync.readChunksTo(destination);
+        transport.close();
     }
 
     public void pull(RemoteFile remote, File local) throws IOException, JadbException {

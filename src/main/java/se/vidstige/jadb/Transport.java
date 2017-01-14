@@ -8,7 +8,8 @@ public class Transport implements AutoCloseable {
 
     private final OutputStream outputStream;
     private final InputStream inputStream;
-
+    Socket socket;
+    
     private Transport(OutputStream outputStream, InputStream inputStream) {
         this.outputStream = outputStream;
         this.inputStream = inputStream;
@@ -16,6 +17,7 @@ public class Transport implements AutoCloseable {
 
     public Transport(Socket socket) throws IOException {
         this(socket.getOutputStream(), socket.getInputStream());
+        this.socket = socket;
     }
 
     public String readString() throws IOException {
@@ -60,9 +62,16 @@ public class Transport implements AutoCloseable {
         return new SyncTransport(outputStream, inputStream);
     }
 
+    boolean closed = false;
+    
     @Override
     public void close() throws IOException {
-        inputStream.close();
-        outputStream.close();
+    	if(!closed) {
+	        inputStream.close();
+	        outputStream.close();
+	        if(socket != null)
+	        	socket.close();
+	        closed = true;
+    	}
     }
 }
